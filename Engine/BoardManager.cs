@@ -19,6 +19,7 @@ namespace Engine
         public virtual GameStats GameStats { get; }
 
         public virtual int NumberOfColumns => this._columns;
+        public IList<Bacteria> Backterias => _bacterias;
 
         public BoardManager(byte[][] gameBoard) : this(gameBoard, null)
         {
@@ -192,11 +193,6 @@ namespace Engine
                     pill.Matrix.Y1));
             }
 
-            // Console.WriteLine($"below1: {below1.Count}");
-            // Console.WriteLine($"below2: {below2.Count}");
-            // Console.WriteLine($"Next1: {next1.Count}");
-            // Console.WriteLine($"Next2: {next2.Count}");
-
             if (below1.Count >= minClearing)
             {
                 remove.AddRange(below1);
@@ -243,7 +239,6 @@ namespace Engine
             tempMove.Move(move);
 
             var validMove = this.CheckPill(tempMove);
-             Console.WriteLine($"valid moved? {validMove} ~ {move:G}");
             if (!validMove && (move == Engine.Move.Down || move == Engine.Move.Fall))
             {
                 LockAndCheck();
@@ -318,7 +313,6 @@ namespace Engine
         {
             this.PreviousPill = this.ActivePill;
             this.ActivePill = null;
-            // Console.WriteLine("Lock started");
             for (var row = this.PreviousPill.Position.Row;
                 row < this.PreviousPill.Position.Row + 2 && row < this._rows;
                 row++)
@@ -358,34 +352,27 @@ namespace Engine
                         this.PreviousPill.Matrix.X1 != 0)
                     {
                         this.GameBoard[row][column] = this.PreviousPill.Matrix.X1;
-                        // Console.WriteLine($"Lock yx1 at {row}, {column}");
                         if (this.PreviousPill.Matrix.X2 != 0)
                         {
                             this.GameBoard[row][column + 1] = this.PreviousPill.Matrix.X2;
-                            // Console.WriteLine($"Lock x2 at {row}, {column + 1}");
                         }
                         if (this.PreviousPill.Matrix.Y1 != 0)
                         {
-                            // Console.WriteLine($"Lock y1 at {row + 1}, {column}");
                             this.GameBoard[row - 1][column] = this.PreviousPill.Matrix.Y1;
                         }
                     }
                 }
             }
-
-            // Console.WriteLine("Lock done");
         }
 
         internal BoardManager RemoveAtPositions(Position[] positions)
         {
-            Console.WriteLine($"Remove: {positions.Length}");
             var pills = 0;
             var bacterias = 0;
             foreach (var position in positions)
             {
                 this.GameBoard[position.Row][position.Column] = 0;
                 var backteria = _bacterias.FirstOrDefault(x => x.Position == position);
-//                var backteria = _bacterias.FirstOrDefault(x => x.Position.Column == position.Column && x.Position.Row == position.Row);
                 if (backteria != null)
                 {
                     _bacterias.Remove(backteria);

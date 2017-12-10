@@ -13,8 +13,6 @@
 
         public int UniqueRotations => this.UniColored ? 2 : 4;
 
-        private static readonly Random Random = new Random();
-
         public Pill(Position position)
         {
             Matrix = GetRandomPill();
@@ -72,8 +70,8 @@
         {
             var blockTypes = Enum.GetValues(typeof(Color)).Cast<Color>().ToArray();
 
-            return new Matrix((byte) Random.NextEnum<Color>(),
-                (byte) Random.NextEnum<Color>());
+            return new Matrix((byte) Random.Instance().NextEnum<Color>(),
+                (byte) Random.Instance().NextEnum<Color>());
         }
 
         internal void Merge(Pill tempPill)

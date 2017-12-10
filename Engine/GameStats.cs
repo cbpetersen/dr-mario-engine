@@ -5,7 +5,7 @@
     public class GameStats
     {
         public int PillsSpawned { get; private set; }
-        public int Fitness => this.TotalBacteriaClearings + this.TotalPillClearings;
+        public int Fitness => this.TotalBacteriaClearings + (this.TotalPillClearings / 10);
         public int TotalPillClearings { get; private set; }
         public int TotalBacteriaClearings { get; private set; }
 

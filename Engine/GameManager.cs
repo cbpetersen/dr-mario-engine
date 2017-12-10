@@ -38,6 +38,7 @@ namespace Engine
         public GameStats GameStats => this._boardManager.GameStats;
         public Pill ActiveBlock => this._boardManager.ActivePill;
         public Pill PreviousBlock => this._boardManager.PreviousPill;
+        public IList<Bacteria> Bacterias => _boardManager.Backterias;
 
         public void OnGameLoopStep()
         {

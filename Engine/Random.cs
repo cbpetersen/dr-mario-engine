@@ -7,11 +7,17 @@ namespace Engine
     public class Random : System.Random
     {
         private static Random _instance;
-
-
+        
         public static Random Instance()
         {
             return _instance ?? (_instance = new Random());
+        }
+
+        private Random(int seed) : base(seed)
+        {   
+        }
+        private Random() : base()
+        {
         }
         
         public T NextColor<T>()
@@ -63,6 +69,11 @@ namespace Engine
             }
 
             return availablePositions[Next(0, availablePositions.Count)];
+        }
+
+        public void SetNewSeed(int i)
+        {
+            _instance = new Random(i);
         }
     }
 }

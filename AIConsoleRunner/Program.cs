@@ -6,6 +6,7 @@ using System.Threading;
 using AI;
 using AI.Algorithms;
 using AI.Algorithms.Weights;
+using ApiClient.Entities;
 using Engine;
 using Engine.Extensions;
 using Move = Engine.Move;
@@ -14,40 +15,48 @@ namespace AIConsoleRunner
 {
     public class Program
     {
+        private const int BacteriaCount = 30;
+        private const int BacteriaDiversityCount = 3;
         private static IDictionary<char, ConsoleColor> _colorMap;
 
         static void Main(string[] args)
         {
+            var uiEnabled = false;
             var gameCount = 0;
+            Engine.Random.Instance().SetNewSeed(123);
             _colorMap = MapColors();
-            AlgorithmSetting<AiWeights> algorithmSettings = null;
+            var httpclient = new ApiClient.ApiClient(new Uri("http://localhost:3000"));
+            var algorithmSettings = new AlgorithmSetting<AiWeights>();
             var moves = new Stack<Move>();
             while (true)
             {
-                algorithmSettings = new AlgorithmSetting<AiWeights>();
-                if (gameCount % 2 == 0) {
-                    algorithmSettings.Weights = new AiWeights()
-                    {
-                        BacteriasCleared = -10,
-                        PillsCleared = -5,
-                        ColumnTransitions = 2,
-                        RowTransitions = 3,
-                        NumberOfHoles = 10,
-                        WellSums = 5,
-                        LandingHeight = 1
-                    };
+                try
+                {
+                    algorithmSettings = httpclient.GetAlgorithmSettings<FeatureAi, AiWeights>(
+                        new AlgorithmSetting<AiWeights> {Name = "Dr Mario - Engine"});
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    Console.WriteLine($"Error: retrying in a sec");
+                    Thread.Sleep(1000);
+                    continue;
                 }
 
                 var gameManager = new GameManager(20, 10);
-                gameManager.AddBacterias(20, 3);
+                gameManager.AddBacterias(15, 3);
                 var ai = new AiEngine(new FeatureAi(algorithmSettings.Weights));
                 IEnumerator moveIterator = null;
                 AI.Move aiMove = null;
                 var blockNumber = -1;
                 while (!gameManager.GameState.IsGameOver())
                 {
-                    PrintState(gameManager, moves, aiMove);
-                    Thread.Sleep(50);
+                    if (uiEnabled)
+                    {
+                        PrintState(gameManager, moves, aiMove);                        
+                    }
+
+                    Thread.Sleep(2);
 
                     gameManager.OnGameLoopStep();
 
@@ -65,26 +74,48 @@ namespace AIConsoleRunner
                         moveIterator = aiMove.Moves.GetEnumerator();
                         blockNumber = gameManager.GameStats.PillsSpawned;
                     }
+
+                    if (gameManager.Bacterias.Count < BacteriaCount)
+                    {
+                        var color = gameManager.Bacterias.GroupBy(x => x.Color).OrderByDescending(o => o.Count()).First().Key;
+                        gameManager.AddBacteria(color);
+                    }
                 }
 
+                if (uiEnabled)
+                {
+                    Console.Clear();
+                    Console.Write("Game Over {0}", gameManager.GameStats.Fitness);
+                    Console.WriteLine();
+                    Console.WriteLine();
+                }
+                else
+                {
+                    Console.Write("{0}, ", gameManager.GameStats.Fitness);                    
+                }
 
-                //Console.Clear();
-                Console.Write("{0}, ", gameManager.GameStats.Fitness);
-                Console.Write("Game Over {0}", gameManager.GameStats.Fitness);
-                //Console.WriteLine("Game Over {0}", gameManager.GameStats.Fitness);
-                //Console.WriteLine();
-                //Console.WriteLine();
-                //if (algorithmSettings.)
-                //httpclient.PostStats(new GameResult<AiWeights>(algorithmSettings)
-                //{
-                //  PillsSpawned = gameManager.GameStats.PillsSpawned,
-//                  Bacterias = gameManager.GameStats.TotalBacteriaClearings,
-//                  Pills = gameManager.GameStats.TotalPillClearings,
-                //  Fitness = gameManager.GameStats.Fitness
-                //});
-                gameCount++;
-                Thread.Sleep(150);
-                Thread.Sleep(5050);
+                try
+                {
+                    httpclient.PostStats(new GameResult<AiWeights>(algorithmSettings)
+                    {
+                        PillsSpawned = gameManager.GameStats.PillsSpawned,
+                        Bacterias = gameManager.GameStats.TotalBacteriaClearings,
+                        Pills = gameManager.GameStats.TotalPillClearings,
+                        Fitness = gameManager.GameStats.Fitness
+                    });
+                    gameCount++;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    Thread.Sleep(1000);
+                }
+
+                Thread.Sleep(50);
+                if (uiEnabled)
+                {
+                    Thread.Sleep(5000);
+                }
             }
         }
 
@@ -135,6 +166,7 @@ namespace AIConsoleRunner
                 }
                 Console.Write(c);
             }
+
             Console.WriteLine();
             Console.WriteLine();
             Console.WriteLine("Spawned: {0}", gameManager.GameStats.PillsSpawned);
@@ -148,10 +180,5 @@ namespace AIConsoleRunner
                 Console.WriteLine("Last 15 Moves: {0}", moves.Take(15).Select(x => x.ToString()).Aggregate((x, y) => $"{x},{y}"));
             }
         }
-    }
-
-    internal class AlgorithmSetting<T>
-    {
-        public T Weights { get; set; }
     }
 }

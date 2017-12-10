@@ -36,7 +36,7 @@ namespace AI.Algorithms
             fitness += features.NumberOfHoles() * this._numberOfHoles;
             fitness += features.RowTransitions() * this._rowTransitions;
             fitness += features.WellSums() * this._wellSums;
-
+            
             return fitness;
         }
     }

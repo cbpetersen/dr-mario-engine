@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\AI\AI.csproj" />
+    <ProjectReference Include="..\ApiClient\ApiClient.csproj" />
     <ProjectReference Include="..\Engine\Engine.csproj" />
   </ItemGroup>
 </Project>
